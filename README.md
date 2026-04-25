@@ -39,11 +39,20 @@ threat-detector-backend/  → API Spring Boot
 ## Lancer le projet
 
 **Backend**
+
+Avant de lancer, ouvrir `Threat-Detector-Backend/src/main/resources/application.properties` et renseigner la clé API :
+
+```properties
+gemini.api.key=TA_CLE_API_ICI
+```
+
+La clé s'obtient sur [Google AI Studio](https://aistudio.google.com/app/apikey).
+
 ```bash
-cd threat-detector-backend
+cd Threat-Detector-Backend
 ./mvnw spring-boot:run
 ```
-L'API démarre sur `http://localhost:8080`. Il faut configurer la clé API Gemini dans `application.properties`.
+L'API démarre sur `http://localhost:8080`.
 
 **Frontend**
 ```bash
