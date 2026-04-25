@@ -1,0 +1,123 @@
+<div class="upload-wrapper">
+
+  <!-- Drop zone -->
+  <div
+    class="drop-zone"
+    [class.dragging]="isDragging"
+    [class.has-file]="selectedFile"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+    (click)="!selectedFile && openFilePicker(); $event.stopPropagation()"
+  >
+    <input #fileInput type="file" accept=".csv" hidden (change)="onFileSelected($event)" />
+
+    @if (!selectedFile) {
+      <div class="icon-wrap upload">
+        <mat-icon>cloud_upload</mat-icon>
+      </div>
+      <p class="drop-primary">Glissez-déposez votre fichier CSV ici</p>
+      <p class="drop-secondary">ou cliquez pour parcourir vos fichiers</p>
+      <span class="drop-hint">Formats acceptés : .csv uniquement</span>
+    } @else {
+      <div class="file-info-row">
+        <div class="icon-wrap file">
+          <mat-icon>description</mat-icon>
+        </div>
+        <div class="file-details">
+          <span class="file-name">{{ selectedFile.name }}</span>
+          <div class="file-meta">
+            <span class="file-size">{{ formatSize(selectedFile.size) }}</span>
+            @if (preview) {
+              <span class="file-rows">· {{ preview.totalRows }} lignes · {{ preview.headers.length }} colonnes</span>
+            }
+            <span class="file-ready">Prêt</span>
+          </div>
+        </div>
+        @if (!isLoading) {
+          <button class="btn-reset" (click)="$event.stopPropagation(); reset()" title="Changer de fichier">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (error) {
+    <p class="error-msg">
+      <mat-icon>error_outline</mat-icon>
+      {{ error }}
+    </p>
+  }
+
+  <!-- CSV Preview -->
+  @if (preview) {
+    <div class="preview-wrap" [class.preview-dimmed]="isLoading">
+      <div class="preview-header">
+        <mat-icon>table_view</mat-icon>
+        <span>Aperçu des données</span>
+        <span class="preview-badge">{{ preview.rows.length }} / {{ preview.totalRows }} lignes</span>
+      </div>
+      <div class="preview-scroll">
+        <table class="preview-table">
+          <thead>
+            <tr>
+              <th class="col-idx">#</th>
+              @for (h of preview.headers; track h) {
+                <th [title]="h">{{ h }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of preview.rows; track $index; let i = $index) {
+              <tr>
+                <td class="col-idx">{{ i + 1 }}</td>
+                @for (cell of row; track $index) {
+                  <td [title]="cell">{{ cell }}</td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (preview.totalRows > preview.rows.length) {
+        <p class="preview-more">… et {{ preview.totalRows - preview.rows.length }} lignes supplémentaires non affichées.</p>
+      }
+    </div>
+  }
+
+  <!-- Loader (pendant l'analyse) -->
+  @if (isLoading) {
+    <div class="loader-wrap">
+      <div class="loader-bar"></div>
+      <div class="loader-gemini">
+        <mat-icon>smart_toy</mat-icon>
+        <span>En attente de Gemini…</span>
+      </div>
+      <p class="loader-hint">L'analyse IA peut prendre jusqu'à 2 minutes</p>
+    </div>
+  }
+
+  <!-- Actions -->
+  <div class="actions">
+    <button mat-stroked-button class="btn-select" [disabled]="isLoading" (click)="reset(); openFilePicker()">
+      <mat-icon>folder_open</mat-icon>
+      <span>Choisir un fichier</span>
+    </button>
+
+    <button
+      mat-flat-button
+      class="btn-analyse"
+      [disabled]="!selectedFile || isLoading"
+      (click)="analyse()"
+    >
+      @if (isLoading) {
+        <mat-icon class="spin-icon">sync</mat-icon>
+      } @else {
+        <mat-icon>bolt</mat-icon>
+      }
+      <span>{{ isLoading ? 'Analyse en cours…' : 'Analyser' }}</span>
+    </button>
+  </div>
+
+</div>

@@ -1,0 +1,2 @@
+Flow ID,Source IP,Source Port,Destination IP,Destination Port,Protocol,Timestamp,Flow Duration,Total Fwd Packets,Total Backward Packets,Total Length of Fwd Packets,Total Length of Bwd Packets,Flow Bytes/s,Flow Packets/s,SYN Flag Count,ACK Flag Count,FIN Flag Count,RST Flag Count,Packet Length Mean,Fwd Packets/s,Bwd Packets/s,Init_Win_bytes_forward,Init_Win_bytes_backward,Label
+1,10.0.0.5,60000,192.168.1.10,80,6,01/07/2017 08:00,100000,1,0,60,0,600,10,1,0,0,0,60,10,0,1024,0,PortScan

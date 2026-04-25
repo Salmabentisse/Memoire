@@ -1,0 +1,44 @@
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: -apple-system, "SF Pro Display", "SF Pro Text", BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  background: #f5f5f7;
+  color: #1d1d1f;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Material icon font */
+.material-icons { font-family: 'Material Icons'; }
+
+/* Override Material tab label color */
+.mat-mdc-tab .mdc-tab__text-label { color: #6e6e73 !important; }
+.mat-mdc-tab.mdc-tab--active .mdc-tab__text-label { color: #1d1d1f !important; }
+.mat-mdc-tab-header { border-bottom: 1px solid rgba(0,0,0,0.08) !important; background: transparent; }
+.mat-mdc-tab-body-wrapper { padding-top: 0; }
+
+/* Tab indicator color */
+.mat-mdc-tab .mdc-tab-indicator__content--underline { border-color: #0071e3 !important; }
+
+/* Override Material table */
+.mat-mdc-table { background: transparent !important; }
+.mat-mdc-header-row { background: #f5f5f7 !important; }
+.mat-mdc-row { background: #ffffff !important; border-bottom: 1px solid rgba(0,0,0,0.06) !important; }
+.mat-mdc-row:hover { background: #f5f5f7 !important; }
+.mat-mdc-header-cell { color: #6e6e73 !important; font-size: 11px !important; font-weight: 600 !important; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid rgba(0,0,0,0.08) !important; }
+.mat-mdc-cell { color: #1d1d1f !important; border-bottom: 1px solid rgba(0,0,0,0.06) !important; font-size: 13px !important; }
+
+/* Override Material card */
+.mat-mdc-card { background: #ffffff !important; border: 1px solid rgba(0,0,0,0.06) !important; box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important; }
+.mat-mdc-card-title { color: #1d1d1f !important; }
+
+/* Progress bar */
+.mdc-linear-progress__bar-inner { border-color: #0071e3 !important; }
+
+/* Les composants Angular sont inline par défaut — on force block pour qu'ils prennent toute la largeur */
+app-upload, app-dashboard { display: block; }

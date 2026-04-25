@@ -1,0 +1,478 @@
+{
+  "info": {
+    "name": "Threat Detector API",
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "description": "Collection de tests pour l'API Threat Detector — PFE Comparaison IDS classique vs LLM",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1 — Health Check",
+      "item": [
+        {
+          "name": "GET /health — serveur démarré",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Réponse contient OK', function () {",
+                  "    pm.expect(pm.response.text()).to.include('OK');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2 — Analyse CSV valide",
+      "item": [
+        {
+          "name": "POST /analyze — trafic BENIGN (0 alerte attendue)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["analyze"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "test-data/test_benign.csv"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Réponse est du JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "var body = pm.response.json();",
+                  "",
+                  "pm.test('totalRows vaut 3', function () {",
+                  "    pm.expect(body.metrics.totalRows).to.equal(3);",
+                  "});",
+                  "",
+                  "pm.test('Aucune alerte de règle sur trafic BENIGN', function () {",
+                  "    pm.expect(body.ruleAlerts.length).to.equal(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /analyze — Port Scan (alertes HIGH attendues)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["analyze"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "test-data/test_portscan.csv"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var body = pm.response.json();",
+                  "",
+                  "pm.test('totalRows vaut 4', function () {",
+                  "    pm.expect(body.metrics.totalRows).to.equal(4);",
+                  "});",
+                  "",
+                  "pm.test('Des ruleAlerts sont détectées', function () {",
+                  "    pm.expect(body.ruleAlerts.length).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test('Au moins une alerte HIGH', function () {",
+                  "    var highAlerts = body.ruleAlerts.filter(function(a) { return a.severity === 'HIGH'; });",
+                  "    pm.expect(highAlerts.length).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test('ruleTruePositives > 0', function () {",
+                  "    pm.expect(body.metrics.ruleTruePositives).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /analyze — DDoS SYN Flood",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["analyze"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "test-data/test_ddos.csv"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var body = pm.response.json();",
+                  "",
+                  "pm.test('Des alertes DDoS sont détectées', function () {",
+                  "    pm.expect(body.ruleAlerts.length).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test('Au moins une alerte HIGH pour le DDoS', function () {",
+                  "    var highAlerts = body.ruleAlerts.filter(function(a) { return a.severity === 'HIGH'; });",
+                  "    pm.expect(highAlerts.length).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test('Le LLM fournit des recommandations', function () {",
+                  "    pm.expect(body.llmAlerts.length).to.be.above(0);",
+                  "    body.llmAlerts.forEach(function(alert) {",
+                  "        pm.expect(alert.recommendation.length).to.be.above(10);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /analyze — Brute Force SSH",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["analyze"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "test-data/test_ssh_brute.csv"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var body = pm.response.json();",
+                  "",
+                  "pm.test('Brute force SSH détecté', function () {",
+                  "    pm.expect(body.ruleAlerts.length).to.be.above(0);",
+                  "    var sshAlerts = body.ruleAlerts.filter(function(a) {",
+                  "        return a.rule.includes('BRUTE_FORCE');",
+                  "    });",
+                  "    pm.expect(sshAlerts.length).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test('Structure des champs ruleAlert correcte', function () {",
+                  "    var alert = body.ruleAlerts[0];",
+                  "    pm.expect(alert).to.have.property('row');",
+                  "    pm.expect(alert).to.have.property('rule');",
+                  "    pm.expect(alert).to.have.property('severity');",
+                  "    pm.expect(alert).to.have.property('description');",
+                  "    pm.expect(['LOW', 'MEDIUM', 'HIGH']).to.include(alert.severity);",
+                  "});",
+                  "",
+                  "pm.test('Structure des champs llmAlert correcte', function () {",
+                  "    if (body.llmAlerts.length > 0) {",
+                  "        var alert = body.llmAlerts[0];",
+                  "        pm.expect(alert).to.have.property('row');",
+                  "        pm.expect(alert).to.have.property('severity');",
+                  "        pm.expect(alert).to.have.property('explanation');",
+                  "        pm.expect(alert).to.have.property('recommendation');",
+                  "        pm.expect(alert).to.have.property('confidence');",
+                  "        pm.expect(alert.confidence).to.be.within(0, 100);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /analyze — Mix d'attaques (cohérence métriques)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["analyze"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "test-data/test_mixed.csv"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var body = pm.response.json();",
+                  "var m = body.metrics;",
+                  "",
+                  "pm.test('totalRows vaut 5', function () {",
+                  "    pm.expect(m.totalRows).to.equal(5);",
+                  "});",
+                  "",
+                  "pm.test('ruleTruePositives + ruleFalsePositives = nombre de ruleAlerts', function () {",
+                  "    pm.expect(m.ruleTruePositives + m.ruleFalsePositives).to.equal(body.ruleAlerts.length);",
+                  "});",
+                  "",
+                  "pm.test('llmTruePositives + llmFalsePositives = nombre de llmAlerts', function () {",
+                  "    pm.expect(m.llmTruePositives + m.llmFalsePositives).to.equal(body.llmAlerts.length);",
+                  "});",
+                  "",
+                  "pm.test('Tous les numéros de ligne sont valides', function () {",
+                  "    body.ruleAlerts.forEach(function(a) {",
+                  "        pm.expect(a.row).to.be.at.least(1);",
+                  "        pm.expect(a.row).to.be.at.most(m.totalRows);",
+                  "    });",
+                  "    body.llmAlerts.forEach(function(a) {",
+                  "        pm.expect(a.row).to.be.at.least(1);",
+                  "        pm.expect(a.row).to.be.at.most(m.totalRows);",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('llmAvgConfidence entre 0 et 100', function () {",
+                  "    if (body.llmAlerts.length > 0) {",
+                  "        pm.expect(m.llmAvgConfidence).to.be.within(0, 100);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /analyze — temps de réponse < 30s",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["analyze"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "test-data/test_single.csv"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Temps de réponse inférieur à 30 secondes', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(30000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3 — Cas d'erreur",
+      "item": [
+        {
+          "name": "POST /analyze — sans paramètre file (400)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["analyze"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 400 ou 500 (pas de fichier fourni)', function () {",
+                  "    pm.expect([400, 500]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /analyze — CSV sans colonnes CICIDS (toléré)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["analyze"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "test-data/test_malformed.csv"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 200 (le serveur tolère les colonnes inconnues)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var body = pm.response.json();",
+                  "",
+                  "pm.test('Aucune alerte sur CSV sans colonnes CICIDS', function () {",
+                  "    pm.expect(body.ruleAlerts.length).to.equal(0);",
+                  "});",
+                  "",
+                  "pm.test('totalRows correct même avec colonnes inconnues', function () {",
+                  "    pm.expect(body.metrics.totalRows).to.equal(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /endpoint-inexistant (404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/inexistant",
+              "host": ["{{baseUrl}}"],
+              "path": ["inexistant"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 404 pour route inexistante', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

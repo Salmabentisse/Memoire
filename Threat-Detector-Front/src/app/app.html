@@ -1,0 +1,257 @@
+<!-- Shell principal du dashboard : sidebar gauche + zone principale droite -->
+<div class="dashboard-shell">
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <aside class="sidebar">
+
+    <!-- Logo + nom de l'app -->
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <mat-icon>shield</mat-icon>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">ThreatDetector</span>
+        <span class="brand-sub">SIEM v1.0</span>
+      </div>
+    </div>
+
+    <!-- Navigation (liens visuels vers les sections de la page) -->
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Analyse</div>
+
+      <a class="nav-item" [class.active]="!logService.result()" (click)="newAnalysis()">
+        <mat-icon>upload_file</mat-icon>
+        <span>Import CSV</span>
+      </a>
+
+      <a class="nav-item" [class.active]="logService.result() && activeTab() === 0"
+         [class.nav-item-disabled]="!logService.result()"
+         (click)="logService.result() && goToTab(0)">
+        <mat-icon>rule</mat-icon>
+        <span>Règles classiques</span>
+        @if (logService.result()) {
+          <span class="nav-badge nav-badge-red">{{ logService.result()!.ruleAlerts.length }}</span>
+        }
+      </a>
+
+      <a class="nav-item" [class.active]="logService.result() && activeTab() === 1"
+         [class.nav-item-disabled]="!logService.result()"
+         (click)="logService.result() && goToTab(1)">
+        <mat-icon>smart_toy</mat-icon>
+        <span>Détection IA</span>
+        @if (logService.result()) {
+          <span class="nav-badge nav-badge-blue">{{ logService.result()!.llmAlerts.length }}</span>
+        }
+      </a>
+
+      <a class="nav-item" [class.active]="logService.result() && activeTab() === 2"
+         [class.nav-item-disabled]="!logService.result()"
+         (click)="logService.result() && goToTab(2)">
+        <mat-icon>compare_arrows</mat-icon>
+        <span>Comparaison</span>
+      </a>
+    </nav>
+
+    <!-- Bloc VS en bas de la sidebar -->
+    <div class="sidebar-vs">
+      <div class="sidebar-vs-row vs-rule">
+        <mat-icon>rule</mat-icon>
+        <span>Règles classiques</span>
+      </div>
+      <div class="vs-divider">
+        <span>VS</span>
+      </div>
+      <div class="sidebar-vs-row vs-ai">
+        <mat-icon>smart_toy</mat-icon>
+        <span>Détection IA</span>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ═══════════ ZONE PRINCIPALE ═══════════ -->
+  <div class="main-area">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="topbar-title">Tableau de bord</h1>
+        <span class="topbar-sub">Analyse de logs réseau · CICIDS 2017</span>
+      </div>
+      <div class="topbar-right">
+        @if (logService.isAnalyzing()) {
+          <div class="status-chip status-analyzing">
+            <span class="status-dot status-dot-pulse"></span>
+            Gemini analyse… (jusqu'à 2 min)
+          </div>
+        } @else if (logService.result()) {
+          <div class="status-chip status-ok">
+            <span class="status-dot"></span>
+            Analyse terminée
+          </div>
+        } @else {
+          <div class="status-chip status-idle">
+            <span class="status-dot"></span>
+            En attente d'un fichier
+          </div>
+        }
+      </div>
+    </header>
+
+    <!-- Contenu de la page -->
+    <main class="page-content">
+
+      <!-- ── Cartes KPI ── -->
+      <div class="kpi-row">
+
+        <!-- Flux total : contexte général -->
+        <div class="kpi-card">
+          <div class="kpi-icon kpi-icon-blue">
+            <mat-icon>storage</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-val">
+              {{ logService.result() ? (logService.result()!.metrics.totalRows | number) : '—' }}
+            </span>
+            <span class="kpi-label">Flux analysés</span>
+            <span class="kpi-hint">connexions réseau dans le CSV</span>
+          </div>
+        </div>
+
+        <!-- Règles : beaucoup d'alertes, sans contexte -->
+        <div class="kpi-card kpi-card-warn">
+          <div class="kpi-icon kpi-icon-red">
+            <mat-icon>warning</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-val kpi-val-red">
+              {{ logService.result() ? logService.result()!.ruleAlerts.length : '—' }}
+            </span>
+            <div class="kpi-label-row">
+              <span class="kpi-label">Alertes brutes (règles)</span>
+              <mat-icon class="kpi-info-icon"
+                matTooltip="Les règles classiques fonctionnent comme un IDS : elles comparent chaque flux réseau à des signatures connues (SYN flood, brute-force SSH, port scan…). Si un flux correspond, une alerte est levée automatiquement — sans explication ni contexte. C'est rapide, mais aveugle aux menaces inconnues et génère beaucoup de bruit."
+                matTooltipPosition="above"
+                matTooltipClass="kpi-tooltip">
+                info_outline
+              </mat-icon>
+            </div>
+            <span class="kpi-hint">sans explication ni recommandation</span>
+          </div>
+        </div>
+
+        <!-- IA : menaces ciblées, avec explication -->
+        <div class="kpi-card kpi-card-best">
+          <div class="kpi-icon kpi-icon-green">
+            <mat-icon>verified</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-val kpi-val-green">
+              {{ logService.result() ? logService.result()!.llmAlerts.length : '—' }}
+            </span>
+            <span class="kpi-label">Menaces confirmées (IA)</span>
+            <span class="kpi-hint kpi-hint-green">avec explication + recommandation</span>
+          </div>
+          @if (logService.result()) {
+            <div class="kpi-best-badge">
+              <mat-icon>star</mat-icon>
+              Meilleur
+            </div>
+          }
+        </div>
+
+        <!-- Confiance IA -->
+        <div class="kpi-card">
+          <div class="kpi-icon kpi-icon-orange">
+            <mat-icon>track_changes</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-val kpi-val-green">
+              {{ logService.result() ? (logService.result()!.metrics.llmAvgConfidence | number:'1.0-0') + '%' : '—' }}
+            </span>
+            <span class="kpi-label">Confiance moy. IA</span>
+            @if (logService.result()) {
+              <span class="kpi-hint kpi-hint-green">score de certitude Gemini</span>
+            }
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Bandeau de synthèse (visible après analyse) ── -->
+      @if (logService.result()) {
+        <div class="insight-banner">
+          <div class="insight-icon">
+            <mat-icon>insights</mat-icon>
+          </div>
+          <div class="insight-text">
+            Les règles classiques ont généré
+            <strong class="hl-red">{{ logService.result()!.ruleAlerts.length }} alertes brutes</strong>
+            sans aucune explication ni recommandation — l'analyste doit tout vérifier manuellement.
+            L'IA a ciblé seulement
+            <strong class="hl-green">{{ logService.result()!.llmAlerts.length }} vraies menaces</strong>
+            avec un score de confiance moyen de
+            <strong class="hl-green">{{ logService.result()!.metrics.llmAvgConfidence | number:'1.0-0' }}%</strong>,
+            une explication et une action corrective pour chacune.
+            <strong>Moins d'alertes, mais chacune est exploitable.</strong>
+          </div>
+        </div>
+      }
+
+      <!-- ── Upload Panel : grand avant analyse, compact après ── -->
+      @if (!logService.result() && !logService.isAnalyzing()) {
+        <div class="panel" id="upload-section">
+          <div class="panel-header">
+            <mat-icon class="panel-header-icon">upload_file</mat-icon>
+            <span class="panel-title">Import du fichier CSV</span>
+            <span class="panel-sub">Formats acceptés : .csv (CICIDS 2017)</span>
+          </div>
+          <div class="panel-body">
+            <app-upload #uploadRef></app-upload>
+          </div>
+        </div>
+      } @else if (logService.isAnalyzing()) {
+        <!-- Pendant l'analyse : on garde le panel visible -->
+        <div class="panel" id="upload-section">
+          <div class="panel-header">
+            <mat-icon class="panel-header-icon">upload_file</mat-icon>
+            <span class="panel-title">Import du fichier CSV</span>
+            <span class="panel-sub">Formats acceptés : .csv (CICIDS 2017)</span>
+          </div>
+          <div class="panel-body">
+            <app-upload #uploadRef></app-upload>
+          </div>
+        </div>
+      } @else {
+        <!-- Après analyse : barre compacte "Nouvelle analyse" -->
+        <div class="new-analysis-bar" id="upload-section">
+          <mat-icon class="new-analysis-icon">check_circle</mat-icon>
+          <div class="new-analysis-text">
+            <span class="new-analysis-title">Analyse terminée</span>
+            <span class="new-analysis-hint">Importez un nouveau fichier pour relancer une analyse</span>
+          </div>
+          <button class="new-analysis-btn" (click)="newAnalysis()">
+            <mat-icon>refresh</mat-icon>
+            Nouvelle analyse
+          </button>
+        </div>
+      }
+
+      <!-- ── Résultats ── -->
+      @if (logService.result()) {
+        <div class="panel result-appear" id="results-section">
+          <div class="panel-header">
+            <mat-icon class="panel-header-icon">bar_chart</mat-icon>
+            <span class="panel-title">Résultats de l'analyse</span>
+            <span class="panel-sub">Règles classiques · Détection IA · Comparaison</span>
+          </div>
+          <div class="panel-body">
+            <app-dashboard [activeTab]="activeTab()"></app-dashboard>
+          </div>
+        </div>
+      }
+
+    </main>
+  </div>
+
+</div>

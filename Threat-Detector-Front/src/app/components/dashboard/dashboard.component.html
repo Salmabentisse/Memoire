@@ -1,0 +1,298 @@
+<mat-tab-group animationDuration="150ms" class="dashboard-tabs" [selectedIndex]="activeTab">
+
+  <!-- ═══ TAB 1 — Détection classique ═══ -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">rule</mat-icon>
+      Règles classiques
+      <span class="tab-count tab-count-red">{{ result()!.ruleAlerts.length }}</span>
+    </ng-template>
+
+    <div class="tab-content">
+      <div class="tab-toolbar">
+        <span class="toolbar-title">
+          Alertes détectées par signatures
+          <mat-icon class="info-icon"
+            matTooltip="Les règles classiques fonctionnent comme un IDS (Intrusion Detection System) : elles comparent chaque flux réseau à des signatures connues (ex: SYN flood, brute-force SSH, port scan). Si un flux correspond à une règle, une alerte est levée — sans explication ni contexte. Rapide mais aveugle aux menaces inconnues."
+            matTooltipPosition="right"
+            matTooltipClass="rule-tooltip">
+            info_outline
+          </mat-icon>
+        </span>
+        <div class="severity-legend">
+          <span class="leg-dot high"></span>Élevé
+          <span class="leg-dot medium"></span>Moyen
+          <span class="leg-dot low"></span>Faible
+        </div>
+      </div>
+
+      @if (result()!.ruleAlerts.length === 0) {
+        <div class="empty-tab"><mat-icon>verified_user</mat-icon><p>Aucune signature déclenchée</p></div>
+      } @else {
+        <div class="alert-list">
+          @for (a of result()!.ruleAlerts; track a.row) {
+            <div class="alert-card" [ngClass]="'border-' + a.severity.toLowerCase()">
+              <div class="alert-left">
+                <span class="sev-badge" [ngClass]="'sev-' + a.severity.toLowerCase()">
+                  {{ a.severity }}
+                </span>
+                <span class="line-num">#{{ a.row }}</span>
+              </div>
+              <div class="alert-body">
+                <div class="alert-title">
+                  <code class="rule-pill">{{ a.rule }}</code>
+                </div>
+                <p class="alert-desc">{{ a.description }}</p>
+              </div>
+              <mat-icon class="alert-chevron">chevron_right</mat-icon>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </mat-tab>
+
+  <!-- ═══ TAB 2 — Détection IA ═══ -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">smart_toy</mat-icon>
+      Détection IA
+      <span class="tab-count tab-count-blue">{{ result()!.llmAlerts.length }}</span>
+    </ng-template>
+
+    <div class="tab-content">
+      @if (result()!.llmAlerts.length === 0) {
+        <div class="empty-tab"><mat-icon>smart_toy</mat-icon><p>Aucune anomalie détectée par l'IA</p></div>
+      } @else {
+        <div class="ai-layout">
+
+          <!-- Colonne gauche : liste des alertes -->
+          <div class="ai-feed">
+            <div class="ai-feed-title">
+              <mat-icon>format_list_bulleted</mat-icon>
+              Alertes détectées
+            </div>
+            @for (a of result()!.llmAlerts; track a.row) {
+              <div class="ai-alert-row" [ngClass]="'border-' + a.severity.toLowerCase()">
+                <div class="ai-row-top">
+                  <span class="sev-badge" [ngClass]="'sev-' + a.severity.toLowerCase()">{{ a.severity }}</span>
+                  @if (isExclusive(a.row)) {
+                    <span class="exclusive-tag">
+                      <mat-icon>add_circle</mat-icon>
+                      Hors règles
+                    </span>
+                  }
+                  <div class="ai-conf-inline" [ngClass]="confidenceClass(a.confidence)">
+                    <div class="conf-track">
+                      <div class="conf-fill" [style.width.%]="a.confidence"></div>
+                    </div>
+                    <span>{{ a.confidence }}%</span>
+                  </div>
+                </div>
+                <p class="ai-threat-type">{{ a.threatType || 'Menace inconnue' }}</p>
+                @if (a.sourceIp) {
+                  <div class="ai-flow">
+                    <span class="flow-ip">{{ a.sourceIp }}<span class="flow-port">:{{ a.srcPort }}</span></span>
+                    <mat-icon class="flow-arrow">arrow_forward</mat-icon>
+                    <span class="flow-ip">{{ a.destIp }}<span class="flow-port">:{{ a.dstPort }}</span></span>
+                    <span class="flow-proto">{{ a.protocol }}</span>
+                    <span class="flow-row">Ligne #{{ a.row }}</span>
+                  </div>
+                } @else {
+                  <span class="flow-row-only">Ligne #{{ a.row }}</span>
+                }
+                <p class="ai-expl">{{ a.explanation }}</p>
+                <div class="ai-reco">
+                  <mat-icon>tips_and_updates</mat-icon>
+                  {{ a.recommendation }}
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Colonne droite : insights -->
+          <div class="ai-sidebar">
+
+            <!-- Score de confiance moyen -->
+            <div class="sidebar-card">
+              <div class="sidebar-card-title">Confiance globale</div>
+              <div class="conf-gauge">
+                <div class="conf-gauge-track">
+                  <div class="conf-gauge-fill" [style.width.%]="result()!.metrics.llmAvgConfidence"
+                    [ngClass]="confidenceClass(result()!.metrics.llmAvgConfidence)"></div>
+                </div>
+                <span class="conf-gauge-val">{{ result()!.metrics.llmAvgConfidence }}%</span>
+              </div>
+              <p class="sidebar-hint">Score moyen sur {{ result()!.llmAlerts.length }} alertes</p>
+            </div>
+
+            <!-- Distribution de confiance -->
+            <div class="sidebar-card">
+              <div class="sidebar-card-title">Distribution</div>
+              <div class="dist-row">
+                <span class="dist-label">Haute ≥ 75%</span>
+                <div class="dist-bar-track">
+                  <div class="dist-bar-fill dist-high"
+                    [style.width.%]="confDistribution().high / confDistribution().total * 100"></div>
+                </div>
+                <span class="dist-count">{{ confDistribution().high }}</span>
+              </div>
+              <div class="dist-row">
+                <span class="dist-label">Moy. 50–74%</span>
+                <div class="dist-bar-track">
+                  <div class="dist-bar-fill dist-medium"
+                    [style.width.%]="confDistribution().medium / confDistribution().total * 100"></div>
+                </div>
+                <span class="dist-count">{{ confDistribution().medium }}</span>
+              </div>
+              <div class="dist-row">
+                <span class="dist-label">Faible &lt; 50%</span>
+                <div class="dist-bar-track">
+                  <div class="dist-bar-fill dist-low"
+                    [style.width.%]="confDistribution().low / confDistribution().total * 100"></div>
+                </div>
+                <span class="dist-count">{{ confDistribution().low }}</span>
+              </div>
+            </div>
+
+            <!-- Alertes exclusives à l'IA -->
+            <div class="sidebar-card exclusive-card">
+              <div class="sidebar-card-title">
+                <mat-icon>add_circle</mat-icon>
+                Alertes hors règles
+              </div>
+              @if (exclusiveAiAlerts().length === 0) {
+                <p class="sidebar-hint">L'IA n'a pas détecté d'anomalies supplémentaires.</p>
+              } @else {
+                <p class="exclusive-count">{{ exclusiveAiAlerts().length }} menace{{ exclusiveAiAlerts().length > 1 ? 's' : '' }} non couvertes par les signatures</p>
+                @for (a of exclusiveAiAlerts(); track a.row) {
+                  <div class="exclusive-item" [ngClass]="'border-' + a.severity.toLowerCase()">
+                    <span class="sev-badge" [ngClass]="'sev-' + a.severity.toLowerCase()">{{ a.severity }}</span>
+                    <span class="exclusive-row">Ligne #{{ a.row }}</span>
+                    <span class="exclusive-conf" [ngClass]="confidenceClass(a.confidence)">{{ a.confidence }}%</span>
+                  </div>
+                }
+              }
+            </div>
+
+          </div>
+        </div>
+      }
+    </div>
+  </mat-tab>
+
+  <!-- ═══ TAB 3 — Comparaison ═══ -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">compare_arrows</mat-icon>
+      Comparaison
+    </ng-template>
+
+    <div class="tab-content comparison-tab">
+
+      <!-- Feature matrix -->
+      <div class="feature-matrix">
+        <div class="matrix-header">
+          <span class="matrix-feature-col">Capacité</span>
+          <span class="matrix-rule-col">
+            <mat-icon>rule</mat-icon>
+            Règles classiques
+          </span>
+          <span class="matrix-ai-col">
+            <mat-icon>smart_toy</mat-icon>
+            Détection IA
+          </span>
+        </div>
+        <div class="matrix-row">
+          <span class="matrix-feature">Détection des menaces</span>
+          <span class="matrix-val yes"><mat-icon>check_circle</mat-icon></span>
+          <span class="matrix-val yes"><mat-icon>check_circle</mat-icon></span>
+        </div>
+        <div class="matrix-row">
+          <span class="matrix-feature">Explication du pourquoi</span>
+          <span class="matrix-val no"><mat-icon>cancel</mat-icon></span>
+          <span class="matrix-val yes"><mat-icon>check_circle</mat-icon></span>
+        </div>
+        <div class="matrix-row">
+          <span class="matrix-feature">Recommandation d'action</span>
+          <span class="matrix-val no"><mat-icon>cancel</mat-icon></span>
+          <span class="matrix-val yes"><mat-icon>check_circle</mat-icon></span>
+        </div>
+        <div class="matrix-row">
+          <span class="matrix-feature">Score de confiance</span>
+          <span class="matrix-val no"><mat-icon>cancel</mat-icon></span>
+          <span class="matrix-val yes"><mat-icon>check_circle</mat-icon></span>
+        </div>
+        <div class="matrix-row">
+          <span class="matrix-feature">Priorisation des alertes</span>
+          <span class="matrix-val no"><mat-icon>cancel</mat-icon></span>
+          <span class="matrix-val yes"><mat-icon>check_circle</mat-icon></span>
+        </div>
+      </div>
+
+      <!-- Volume vs qualité -->
+      <div class="compare-columns">
+
+        <div class="compare-col col-rule">
+          <div class="col-header">
+            <mat-icon>rule</mat-icon>
+            <span>Règles classiques</span>
+          </div>
+          <div class="big-metric">
+            <span class="big-num">{{ result()!.ruleAlerts.length }}</span>
+            <span class="big-label">alertes brutes</span>
+          </div>
+          <div class="mini-metric">
+            <span class="mini-label">Alertes avec contexte</span>
+            <span class="mini-val fp">Non</span>
+          </div>
+          <div class="mini-metric">
+            <span class="mini-label">Recommandation fournie</span>
+            <span class="mini-val fp">Non</span>
+          </div>
+          <div class="mini-metric">
+            <span class="mini-label">Score de confiance</span>
+            <span class="mini-val fp">Non</span>
+          </div>
+          <div class="mini-metric">
+            <span class="mini-label">Explication fournie</span>
+            <span class="mini-val fp">Non</span>
+          </div>
+        </div>
+
+        <div class="compare-divider">
+          <span class="vs-badge">VS</span>
+        </div>
+
+        <div class="compare-col col-ai">
+          <div class="col-header">
+            <mat-icon>smart_toy</mat-icon>
+            <span>Détection IA</span>
+          </div>
+          <div class="big-metric">
+            <span class="big-num text-green">{{ result()!.llmAlerts.length }}</span>
+            <span class="big-label">menaces ciblées</span>
+          </div>
+          <div class="mini-metric">
+            <span class="mini-label">Alertes avec contexte</span>
+            <span class="mini-val text-green">Oui</span>
+          </div>
+          <div class="mini-metric">
+            <span class="mini-label">Recommandation fournie</span>
+            <span class="mini-val text-green">Oui</span>
+          </div>
+          <div class="mini-metric">
+            <span class="mini-label">Confiance moyenne</span>
+            <span class="mini-val text-blue">{{ result()!.metrics.llmAvgConfidence | number:'1.0-0' }}%</span>
+          </div>
+          <div class="mini-metric">
+            <span class="mini-label">Explication fournie</span>
+            <span class="mini-val text-green">Oui — pour chaque alerte</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </mat-tab>
+
+</mat-tab-group>

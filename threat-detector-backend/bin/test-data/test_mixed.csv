@@ -1,0 +1,6 @@
+Flow ID,Source IP,Source Port,Destination IP,Destination Port,Protocol,Timestamp,Flow Duration,Total Fwd Packets,Total Backward Packets,Total Length of Fwd Packets,Total Length of Bwd Packets,Flow Bytes/s,Flow Packets/s,SYN Flag Count,ACK Flag Count,FIN Flag Count,RST Flag Count,Packet Length Mean,Fwd Packets/s,Bwd Packets/s,Init_Win_bytes_forward,Init_Win_bytes_backward,Label
+1,10.0.0.5,60000,192.168.1.10,80,6,01/07/2017 08:00,100000,1,0,60,0,600,10,1,0,0,0,60,10,0,1024,0,PortScan
+2,172.16.0.1,45000,10.0.0.1,80,6,01/07/2017 09:00,1000,50000,0,3000000,0,3000000000,50000,50000,0,0,0,60,50000,0,1024,0,DDoS
+3,192.168.0.50,55000,192.168.1.20,22,6,01/07/2017 10:00,5000000,120,80,7200,4800,2400,40,5,30,2,1,60,24,16,8192,8192,SSH-Patator
+4,192.168.1.1,12345,8.8.8.8,443,6,01/07/2017 10:02,500000,10,8,1200,800,4000,36,0,10,1,0,100,18,16,65535,65535,BENIGN
+5,192.168.1.2,54321,8.8.4.4,80,6,01/07/2017 10:03,300000,5,4,600,400,3333,30,0,8,1,0,80,15,13,65535,65535,BENIGN
