@@ -1,0 +1,10 @@
+/Users/ayoubelmoutaouakkil/Documents/dev_activities/Mémoire/threat-detector-backend/src/main/java/com/threatdetector/backend/ThreatDetectorBackendApplication.java
+/Users/ayoubelmoutaouakkil/Documents/dev_activities/Mémoire/threat-detector-backend/src/main/java/com/threatdetector/backend/controller/AnalyzeController.java
+/Users/ayoubelmoutaouakkil/Documents/dev_activities/Mémoire/threat-detector-backend/src/main/java/com/threatdetector/backend/model/CompareMetrics.java
+/Users/ayoubelmoutaouakkil/Documents/dev_activities/Mémoire/threat-detector-backend/src/main/java/com/threatdetector/backend/model/CompareResult.java
+/Users/ayoubelmoutaouakkil/Documents/dev_activities/Mémoire/threat-detector-backend/src/main/java/com/threatdetector/backend/model/LlmAlert.java
+/Users/ayoubelmoutaouakkil/Documents/dev_activities/Mémoire/threat-detector-backend/src/main/java/com/threatdetector/backend/model/RuleAlert.java
+/Users/ayoubelmoutaouakkil/Documents/dev_activities/Mémoire/threat-detector-backend/src/main/java/com/threatdetector/backend/service/AnalysisService.java
+/Users/ayoubelmoutaouakkil/Documents/dev_activities/Mémoire/threat-detector-backend/src/main/java/com/threatdetector/backend/service/CsvParserService.java
+/Users/ayoubelmoutaouakkil/Documents/dev_activities/Mémoire/threat-detector-backend/src/main/java/com/threatdetector/backend/service/LlmService.java
+/Users/ayoubelmoutaouakkil/Documents/dev_activities/Mémoire/threat-detector-backend/src/main/java/com/threatdetector/backend/service/RuleEngineService.java
