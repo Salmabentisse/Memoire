@@ -1,4 +1,5 @@
 # ThreatDetector
+Comment l’intelligence artificielle améliore-t-elle la détection des cyberattaques par rapport aux méthodes traditionnelles ?
 
 Projet de fin d'études — Master en cybersécurité.
 
